@@ -39,7 +39,8 @@ public class InventorySystem : ModuleRules
  				"Engine",
  				"Slate",
  				"SlateCore",
-                "DeveloperSettings"
+                "DeveloperSettings",
+                "UnrealGameplayToolkit"
  				// ... add private dependencies that you statically link with here ...	
  			}
  			);

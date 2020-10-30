@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "InventoryTypes.h"
 #include "UObject/Interface.h"
 #include "UGInventorySystemInterface.generated.h"
 
@@ -22,4 +24,8 @@ class INVENTORYSYSTEM_API IUGInventorySystemInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
+
+	virtual FOnInventoryItemChangedNative& GetInventoryItemChangedDelegate() = 0;
+
+	virtual FOnInventorySlottedItemChangedNative& GetInventorySlottedItemChangedDelegate() = 0;
 };
