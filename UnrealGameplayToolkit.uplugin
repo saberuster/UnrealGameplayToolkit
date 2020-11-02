@@ -26,6 +26,11 @@
 			"LoadingPhase": "Default"
 		},
 		{
+			"Name": "AStarSearchAlgorithm",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
 			"Name": "UnrealGameplayToolkitEditor",
 			"Type": "UncookedOnly",
 			"LoadingPhase": "PreDefault"
