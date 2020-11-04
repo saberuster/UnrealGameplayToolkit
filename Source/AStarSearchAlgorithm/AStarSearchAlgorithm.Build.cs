@@ -41,6 +41,7 @@ public class AStarSearchAlgorithm : ModuleRules
                 "Slate",
                 "SlateCore",
                 "DeveloperSettings",
+                "UnrealGameplayToolkit"
                 // ... add private dependencies that you statically link with here ...	
             }
         );

@@ -3,6 +3,7 @@
 #include "AStarSearchAlgorithmModule.h"
 
 #define LOCTEXT_NAMESPACE "FAStarSearchAlgorithmModule"
+DEFINE_LOG_CATEGORY(LogAStarSearchAlgorithm);
 
 void FAStarSearchAlgorithmModule::StartupModule()
 {

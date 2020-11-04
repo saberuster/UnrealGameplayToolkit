@@ -20,9 +20,9 @@ class FUnrealGameplayToolkitEditorModule : public IUnrealGameplayToolkitEditorMo
         if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
         {
            SettingsModule->RegisterSettings(
-               "Project","Project","UnrealGameplayToolkit",
-               NSLOCTEXT("FUnrealGameplayToolkitEditorModule","UnrealGameplayToolkitName", "UnrealGameplayToolkit"),
-               NSLOCTEXT("FUnrealGameplayToolkitEditorModule","UnrealGameplayToolkitDesc", "UnrealGameplayToolkit settings"),
+               "Project","Plugins","UnrealGameplayToolkitEditor",
+               NSLOCTEXT("FUnrealGameplayToolkitEditorModule","UnrealGameplayToolkitName", "UnrealGameplayToolkitEditor"),
+               NSLOCTEXT("FUnrealGameplayToolkitEditorModule","UnrealGameplayToolkitDesc", "UnrealGameplayToolkitEditor settings"),
                GetMutableDefault<UGameplayCreationMenu>()
                );
 

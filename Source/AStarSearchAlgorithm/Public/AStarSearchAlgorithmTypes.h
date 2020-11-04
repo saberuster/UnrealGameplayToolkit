@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AStarPathNode.h"
 
 class IAStarCoordinate
 {
@@ -50,53 +51,21 @@ public:
 };
 
 
-class FAStarPathNode
-{
-    FAStarPathNode():Parent(nullptr)
-    {
-    }
-
-public:
-
-    TSharedPtr<IAStarCoordinate> Coordinate;
-
-    TArray<TSharedPtr<FAStarPathNode>> ConnectNodes;
-    
-    int32 Cost;
-
-    TSharedPtr<FAStarPathNode> Parent;
-
-    int32 Priority;
-
-    bool IsSameCoordinate(const FAStarPathNode& Other) const
-    {
-        return Coordinate == Other.Coordinate;
-    }
 
 
-    friend bool operator==(const FAStarPathNode& Lhs, const FAStarPathNode& RHS)
-    {
-        return Lhs.IsSameCoordinate(RHS);
-    }
-
-    friend bool operator!=(const FAStarPathNode& Lhs, const FAStarPathNode& RHS)
-    {
-        return !(Lhs == RHS);
-    }
-};
-
+/**
 class IAStarSearchAlgorithm
 {
 public:
     virtual ~IAStarSearchAlgorithm() = default;
 };
 
-
+typedef UAStarPathNode* UFPathNodePtr;
+typedef TArray<UFPathNodePtr> FPathNodeCollection;
 class ASTARSEARCHALGORITHM_API FAStarSearchAlgorithm: public IAStarSearchAlgorithm
 {
 public:
-    typedef TSharedPtr<FAStarPathNode> FPathNodePtr;
-    typedef TArray<FPathNodePtr> FPathNodeCollection;
+
     
     FAStarSearchAlgorithm():bEnableRelax(true){}
 
@@ -104,13 +73,13 @@ public:
 
     uint32 bEnableRelax:1;
 
-    void FindPath(FPathNodePtr Source, FPathNodePtr Target, FPathNodeCollection& OutPathList)
+    void FindPath(UFPathNodePtr Source, UFPathNodePtr Target, FPathNodeCollection& OutPathList)
     {
         FPathNodeCollection OpenNodes,CloseNodes;
         OpenNodes.Add(Source);
         while (OpenNodes.Num() > 0)
         {
-            FPathNodePtr Node = PriorityPop(OpenNodes);
+            UFPathNodePtr Node = PriorityPop(OpenNodes);
             if (Node == Target)
             {
                 PathList(Node, OutPathList);
@@ -118,7 +87,7 @@ public:
             else
             {
                 CloseNodes.Add(Node);
-                for (FPathNodePtr NeighborsNode : Node->ConnectNodes)
+                for (UFPathNodePtr NeighborsNode : Node->ConnectNodes)
                 {
                     NeighborsNode->Priority = CalculatePriority(NeighborsNode);
                     if (bEnableRelax)
@@ -134,42 +103,42 @@ public:
         }
     }
 
-    void FindRadius(FPathNodePtr Source, int32 Radius, FPathNodeCollection& OutPathList)
+    void FindRadius(UFPathNodePtr Source, int32 Radius, FPathNodeCollection& OutPathList)
     {
     }
 
-    virtual int32 CalculatePriority(FPathNodePtr Node)
+    virtual int32 CalculatePriority(UFPathNodePtr Node)
     {
         int32 Priority = Node->Cost;
 
-        FPathNodePtr Parent = Node->Parent;
+        UFPathNodePtr Parent = Node->Parent.Get();
         while (Parent != nullptr)
         {
             Priority += Parent->Cost;
-            Parent = Parent->Parent;
+            Parent = Parent->Parent.Get();
         }
 
         return Priority;
     }
 
 
-    void PathList(FPathNodePtr Target,FPathNodeCollection& OutPathList)
+    void PathList(UFPathNodePtr Target,FPathNodeCollection& OutPathList)
     {
         FPathNodeCollection PathNodes;
         PathNodes.Add(Target);
-        FPathNodePtr Parent = Target->Parent;
+        UFPathNodePtr Parent = Target->Parent.Get();
         while (Parent != nullptr)
         {
             PathNodes.Add(Parent);
-            Parent = Parent->Parent;
+            Parent = Parent->Parent.Get();
         }
     }
 
-    FPathNodePtr PriorityPop(FPathNodeCollection& OpenNodes)
+    UFPathNodePtr PriorityPop(FPathNodeCollection& OpenNodes)
     {
         int32 HightestPriority = MAX_int32;
         int32 FindIndex = -1;
-        FPathNodePtr FindNode = nullptr;
+        UFPathNodePtr FindNode = nullptr;
         for (int32 i = 0; i < OpenNodes.Num(); ++i)
         {
             if (HightestPriority > OpenNodes[i]->Priority)
@@ -187,7 +156,7 @@ public:
         return FindNode;
     }
 
-    void Relax(FPathNodePtr U, FPathNodePtr V)
+    void Relax(UFPathNodePtr U, UFPathNodePtr V)
     {
         if (V->Priority > U->Priority + V->Cost)
         {
@@ -196,3 +165,4 @@ public:
         }
     }
 };
+*/
