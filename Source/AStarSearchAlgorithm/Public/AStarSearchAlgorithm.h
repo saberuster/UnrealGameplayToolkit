@@ -4,86 +4,129 @@
 
 #include "CoreMinimal.h"
 
-class FAStarPathNode
+class IAStarCoordinate
 {
-    FAStarPathNode(): X(0), Y(0), HeuristicCost(0), BaseCost(MAX_int32), Parent(nullptr), D(MAX_int32)
+public:
+    virtual ~IAStarCoordinate() = default;
+    virtual bool Equals(const IAStarCoordinate& Other) const = 0;
+
+    friend bool operator==(const IAStarCoordinate& Lhs, const IAStarCoordinate& RHS)
+    {
+        return Lhs.Equals(RHS);
+    }
+
+    friend bool operator!=(const IAStarCoordinate& Lhs, const IAStarCoordinate& RHS)
+    {
+        return !(Lhs == RHS);
+    }
+};
+
+
+class FAStarCoordinate2D : public IAStarCoordinate
+{
+public:
+
+    FAStarCoordinate2D(): X(-1), Y(-1)
     {
     }
 
-public:
+    FAStarCoordinate2D(int32 InX, int32 InY): X(InX), Y(InY)
+    {
+    }
 
     int32 X;
 
     int32 Y;
 
-    int32 HeuristicCost;
+    virtual bool Equals(const IAStarCoordinate& Other) const override
+    {
+        const FAStarCoordinate2D* StarCoordinate2D = static_cast<const FAStarCoordinate2D*>(&Other);
+        if (StarCoordinate2D)
+        {
+            return X == StarCoordinate2D->X && Y == StarCoordinate2D->Y;
+        }
+        return false;
+    }
+};
 
-    int32 BaseCost;
+
+class FAStarPathNode
+{
+    FAStarPathNode():Parent(nullptr)
+    {
+    }
+
+public:
+
+    TSharedPtr<IAStarCoordinate> Coordinate;
+
+    TArray<TSharedPtr<FAStarPathNode>> ConnectNodes;
+    
+    int32 Cost;
 
     TSharedPtr<FAStarPathNode> Parent;
 
     int32 Priority;
 
-    TArray<TSharedPtr<FAStarPathNode>> ConnectNodes;
-
-
-    int32 Cost() const
+    bool IsSameCoordinate(const FAStarPathNode& Other) const
     {
-        return BaseCost + HeuristicCost;
+        return Coordinate == Other.Coordinate;
     }
 
 
-    friend bool operator==(const FAStarPathNode& Lhs, const FAStarPathNode& Rhs)
+    friend bool operator==(const FAStarPathNode& Lhs, const FAStarPathNode& RHS)
     {
-        return Lhs.X == Rhs.X
-            && Lhs.Y == Rhs.Y;
+        return Lhs.IsSameCoordinate(RHS);
     }
 
-    friend bool operator!=(const FAStarPathNode& Lhs, const FAStarPathNode& Rhs)
+    friend bool operator!=(const FAStarPathNode& Lhs, const FAStarPathNode& RHS)
     {
-        return !(Lhs == Rhs);
+        return !(Lhs == RHS);
     }
 };
 
-
-class ASTARSEARCHALGORITHM_API FAStarSearchAlgorithm
+class IAStarSearchAlgorithm
 {
 public:
-    FAStarSearchAlgorithm()
-    {
-    }
+    virtual ~IAStarSearchAlgorithm() = default;
+};
 
-    TArray<TSharedPtr<FAStarPathNode>> Nodes;
 
-    TArray<TSharedPtr<FAStarPathNode>> OpenNodes;
+class ASTARSEARCHALGORITHM_API FAStarSearchAlgorithm: public IAStarSearchAlgorithm
+{
+public:
+    typedef TSharedPtr<FAStarPathNode> FPathNodePtr;
+    typedef TArray<FPathNodePtr> FPathNodeCollection;
+    
+    FAStarSearchAlgorithm():bEnableRelax(true){}
 
-    TArray<TSharedPtr<FAStarPathNode>> CloseNodes;
+    FPathNodeCollection Nodes;
 
     uint32 bEnableRelax:1;
 
-    void PathFind(TSharedPtr<FAStarPathNode> Source, TSharedPtr<FAStarPathNode> Target)
+    void FindPath(FPathNodePtr Source, FPathNodePtr Target, FPathNodeCollection& OutPathList)
     {
-        OpenNodes.Add(Target);
+        FPathNodeCollection OpenNodes,CloseNodes;
+        OpenNodes.Add(Source);
         while (OpenNodes.Num() > 0)
         {
-            TSharedPtr<FAStarPathNode> Node = PriorityPop();
+            FPathNodePtr Node = PriorityPop(OpenNodes);
             if (Node == Target)
             {
-                PathList(Node);
+                PathList(Node, OutPathList);
             }
             else
             {
                 CloseNodes.Add(Node);
-                TArray<TSharedPtr<FAStarPathNode>> Neighbors = NeighborNodes();
-                for (TSharedPtr<FAStarPathNode> NeighborsNode : Neighbors)
+                for (FPathNodePtr NeighborsNode : Node->ConnectNodes)
                 {
+                    NeighborsNode->Priority = CalculatePriority(NeighborsNode);
                     if (bEnableRelax)
                     {
                         Relax(Node, NeighborsNode);
                     }
                     if (!CloseNodes.Contains(NeighborsNode))
                     {
-                        NeighborsNode->Priority = CalculatePriority(NeighborsNode);
                         OpenNodes.Add(NeighborsNode);
                     }
                 }
@@ -91,44 +134,42 @@ public:
         }
     }
 
-    int32 CalculatePriority(TSharedPtr<FAStarPathNode> Node)
+    void FindRadius(FPathNodePtr Source, int32 Radius, FPathNodeCollection& OutPathList)
     {
-        int32 Priority = Node->BaseCost;
+    }
 
-        TSharedPtr<FAStarPathNode> Parent = Node->Parent;
+    virtual int32 CalculatePriority(FPathNodePtr Node)
+    {
+        int32 Priority = Node->Cost;
+
+        FPathNodePtr Parent = Node->Parent;
         while (Parent != nullptr)
         {
-            Priority += Parent->BaseCost;
+            Priority += Parent->Cost;
             Parent = Parent->Parent;
         }
 
         return Priority;
     }
 
-    TArray<TSharedPtr<FAStarPathNode>> NeighborNodes()
-    {
-        return TArray<TSharedPtr<FAStarPathNode>>();
-    }
 
-    TArray<TSharedPtr<FAStarPathNode>> PathList(TSharedPtr<FAStarPathNode> Target)
+    void PathList(FPathNodePtr Target,FPathNodeCollection& OutPathList)
     {
-        TArray<TSharedPtr<FAStarPathNode>> PathNodes;
+        FPathNodeCollection PathNodes;
         PathNodes.Add(Target);
-        TSharedPtr<FAStarPathNode> Parent = Target->Parent;
+        FPathNodePtr Parent = Target->Parent;
         while (Parent != nullptr)
         {
             PathNodes.Add(Parent);
             Parent = Parent->Parent;
         }
-
-        return PathNodes;
     }
 
-    TSharedPtr<FAStarPathNode> PriorityPop()
+    FPathNodePtr PriorityPop(FPathNodeCollection& OpenNodes)
     {
         int32 HightestPriority = MAX_int32;
         int32 FindIndex = -1;
-        TSharedPtr<FAStarPathNode> FindNode = nullptr;
+        FPathNodePtr FindNode = nullptr;
         for (int32 i = 0; i < OpenNodes.Num(); ++i)
         {
             if (HightestPriority > OpenNodes[i]->Priority)
@@ -146,11 +187,11 @@ public:
         return FindNode;
     }
 
-    void Relax(TSharedPtr<FAStarPathNode> U, TSharedPtr<FAStarPathNode> V)
+    void Relax(FPathNodePtr U, FPathNodePtr V)
     {
-        if (V->Priority > U->Priority + V->BaseCost)
+        if (V->Priority > U->Priority + V->Cost)
         {
-            V->Priority = U->Priority + V->BaseCost;
+            V->Priority = U->Priority + V->Cost;
             V->Parent = U;
         }
     }
